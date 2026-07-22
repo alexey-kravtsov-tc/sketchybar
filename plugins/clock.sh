@@ -5,8 +5,9 @@ refresh_events() {
     gws calendar +agenda --days 30 --format json 2>/dev/null |
         jq -r '
             .events |
-            sort_by(.start) | reverse |
+            sort_by(.start) |
             group_by(.summary) | map(first) |
+            sort_by(.start) |
             .[0:10][] |
             [.summary, .start] | @tsv
         ' > "$TMPFILE"
