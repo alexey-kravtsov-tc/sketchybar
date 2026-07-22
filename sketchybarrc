@@ -41,10 +41,10 @@ sketchybar --subscribe aerospace_handler aerospace_workspace_change routine
 sketchybar --add item clock right \
            --set clock update_freq=300 \
                         script="$CONFIG_DIR/plugins/clock.sh" \
-                        popup.y_offset=-15 \
                         popup.align=center \
                         popup.blur_radius=8 \
-                        popup.background.color=0xff222222
+                        popup.background.color=0xff222222 \
+                        popup.width=300
 sketchybar --subscribe clock mouse.entered mouse.exited mouse.clicked
 
 # Calendar popup items
@@ -56,6 +56,8 @@ for i in $(seq 0 9); do
                    icon.padding_left=6 \
                    icon.padding_right=4 \
                    label.padding_right=6 \
+                   label.width=280 \
+                   width=300 \
                    background.height=20
 done
 
