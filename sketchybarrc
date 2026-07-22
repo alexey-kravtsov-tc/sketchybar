@@ -18,6 +18,8 @@ sketchybar --bar position=bottom \
 sketchybar --default background.color=0xff333333 \
                       background.corner_radius=4 \
                       background.height=16 \
+                      background.padding_left=3 \
+                      background.padding_right=3 \
                       label.color=0xffeeeeee \
                       label.font="Hack Nerd Font:Bold:12.0" \
                       icon.font="Hack Nerd Font:Bold:12.0" \
@@ -30,22 +32,33 @@ sketchybar --default background.color=0xff333333 \
 sketchybar --add item space left \
            --set space update_freq=1 \
                         script="$CONFIG_DIR/plugins/aerospace.sh"
+sketchybar --subscribe space mouse.entered mouse.exited
 
 # --- RIGHT SIDE ITEMS ---
 
 # Clock
 sketchybar --add item clock right \
            --set clock update_freq=10 \
-                       script="$CONFIG_DIR/plugins/clock.sh"
+                        script="$CONFIG_DIR/plugins/clock.sh"
+sketchybar --subscribe clock mouse.entered mouse.exited
 
 # Battery
 sketchybar --add item battery right \
            --set battery update_freq=30 \
-                         script="$CONFIG_DIR/plugins/battery.sh"
+                          script="$CONFIG_DIR/plugins/battery.sh"
+sketchybar --subscribe battery mouse.entered mouse.exited
+
+# WiFi
+sketchybar --add item wifi right \
+           --set wifi update_freq=10 \
+                          script="$CONFIG_DIR/plugins/wifi.sh" \
+                          click_script="open x-apple.systempreferences:com.apple.preference.network"
+sketchybar --subscribe wifi mouse.entered mouse.exited
 
 # Volume
 sketchybar --add item volume right \
            --set volume update_freq=5 \
                         script="$CONFIG_DIR/plugins/volume.sh"
+sketchybar --subscribe volume mouse.entered mouse.exited
 
 sketchybar --update
