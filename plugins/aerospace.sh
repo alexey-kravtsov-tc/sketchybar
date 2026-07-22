@@ -14,7 +14,7 @@ fi
 # --- Mouse event handling for per‑workspace items ---------------------------------
 if [ "$NAME" != "aerospace_handler" ]; then
   if [ "$SENDER" = "mouse.entered" ]; then
-    sketchybar --set "$NAME" background.color=0xff484848
+    sketchybar --set "$NAME" background.color=0xff5a5a5a
     exit 0
   fi
   if [ "$SENDER" = "mouse.exited" ]; then
@@ -22,7 +22,7 @@ if [ "$NAME" != "aerospace_handler" ]; then
     read -r CUR_FOCUSED < "$FOCUSED_FILE" 2>/dev/null
     WS_ID="${NAME#ws}"
     if [ "$WS_ID" = "$CUR_FOCUSED" ]; then
-      sketchybar --set "$NAME" background.color=0xff484848
+      sketchybar --set "$NAME" background.color=0xff5a5a5a
     else
       sketchybar --set "$NAME" background.color=0xff333333
     fi
@@ -50,7 +50,7 @@ ALL_WS=$(aerospace list-workspaces --all 2>/dev/null)
 
 for ws in $ALL_WS; do
   # Fetch unique app names for this workspace
-  APPS=$(aerospace list-windows --workspace "$ws" 2>/dev/null | awk -F' |' '{print $2}' | sort -u)
+  APPS=$(aerospace list-windows --workspace "$ws" 2>/dev/null | awk -F'\\| ' '{print $2}' | sort -u)
 
   # Skip empty workspaces that are not the focused one
   if [ -z "$APPS" ] && [ "$ws" != "$FOCUSED_WS" ]; then
@@ -66,7 +66,7 @@ for ws in $ALL_WS; do
     APP_STR=""
     for app in $APPS; do
       if [ ${#app} -gt 15 ]; then
-        app=$(echo "$app" | cut -c1-12)"..."
+        app="${app:0:12}..."
       fi
       APP_STR="$APP_STR $app"
     done
@@ -76,18 +76,18 @@ for ws in $ALL_WS; do
   # Decide background colour for this workspace
   BG_COLOR="0xff333333"
   if [ "$ws" = "$FOCUSED_WS" ]; then
-    BG_COLOR="0xff484848"
+    BG_COLOR="0xff5a5a5a"
   fi
 
   # Check if the item already exists
   if sketchybar --query "ws${ws}" >/dev/null 2>&1; then
     # Update the existing item
-    sketchybar --set "ws${ws}" label="$APP_STR" background.color="$BG_COLOR"
+    sketchybar --set "ws${ws}" label="${ws}: $APP_STR" background.color="$BG_COLOR"
   else
     # Create a new item for this workspace
     sketchybar --add item "ws${ws}" left \
                --set "ws${ws}" \
-               label="$APP_STR" \
+               label="${ws}: $APP_STR" \
                background.color="$BG_COLOR" \
                script="$CONFIG_DIR/plugins/aerospace.sh"
     sketchybar --subscribe "ws${ws}" mouse.entered mouse.exited
