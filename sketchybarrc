@@ -28,14 +28,12 @@ sketchybar --default background.color=0xff333333 \
 
 # --- LEFT SIDE ITEMS ---
 
-# AeroSpace workspace badge (event-driven)
+# AeroSpace workspace handler (invisible)
 sketchybar --add event aerospace_workspace_change
-sketchybar --add item space left \
-           --set space script="$CONFIG_DIR/plugins/aerospace.sh"
-sketchybar --subscribe space aerospace_workspace_change \
-                  mouse.entered \
-                  mouse.exited \
-                  routine
+sketchybar --add item aerospace_handler left \
+           --set aerospace_handler script="$CONFIG_DIR/plugins/aerospace.sh" \
+                                 drawing=off
+sketchybar --subscribe aerospace_handler aerospace_workspace_change routine
 
 # --- RIGHT SIDE ITEMS ---
 
