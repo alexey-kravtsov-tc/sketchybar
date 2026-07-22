@@ -44,7 +44,7 @@ sketchybar --add item clock right \
                         popup.align=center \
                         popup.blur_radius=8 \
                         popup.background.color=0xff222222 \
-                        popup.width=300
+                        popup.width=600
 sketchybar --subscribe clock mouse.entered mouse.exited mouse.clicked
 
 # Calendar popup items
@@ -56,8 +56,8 @@ for i in $(seq 0 9); do
                    icon.padding_left=6 \
                    icon.padding_right=4 \
                    label.padding_right=6 \
-                   label.width=280 \
-                   width=300 \
+                   label.width=580 \
+                   width=600 \
                    background.height=20
 done
 
