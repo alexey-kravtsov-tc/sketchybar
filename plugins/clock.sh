@@ -16,8 +16,12 @@ refresh_events() {
     while IFS='	' read -r summary start; do
         summary=$(echo "$summary" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
         if echo "$start" | grep -q T; then
-            start_stripped=$(echo "$start" | sed 's/\([+-][0-9]\{2\}\):\([0-9]\{2\}\)/\1\2/')
-            start_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%S%z" "$start_stripped" +%s 2>/dev/null)
+            # Normalize timezone: "Z" → "+0000", remove colon from "+HH:MM"
+            start_norm=$(echo "$start" | sed 's/Z$/+0000/; s/\([+-][0-9]\{2\}\):\([0-9]\{2\}\)/\1\2/')
+            start_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%S%z" "$start_norm" +%s 2>/dev/null)
+            if [ -z "$start_epoch" ]; then
+                start_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%S" "$(echo "$start" | sed 's/\([+-][0-9]\{2\}\):[0-9]\{2\}\|Z$//')" +%s 2>/dev/null)
+            fi
         else
             start_epoch=$(date -j -f "%Y-%m-%d" "$start" +%s 2>/dev/null)
         fi
@@ -60,9 +64,8 @@ elif [ "$SENDER" = "mouse.clicked" ]; then
     sketchybar --set "$NAME" popup.drawing=toggle
     refresh_events
     exit 0
-elif [ "$SENDER" = "timer" ]; then
+elif [ "$SENDER" = "update" ]; then
     refresh_events
-    exit 0
 fi
 
 sketchybar --set $NAME label="$(date '+%a %b %d  %H:%M')"
