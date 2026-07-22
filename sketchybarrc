@@ -80,7 +80,7 @@ sketchybar --subscribe media_prev media_change routine mouse.entered mouse.exite
 sketchybar --add item kb_layout right \
            --set kb_layout update_freq=5 \
                            script="$CONFIG_DIR/plugins/kb_layout.sh"
-sketchybar --subscribe kb_layout mouse.entered mouse.exited
+sketchybar --subscribe kb_layout mouse.entered mouse.exited mouse.clicked
 
 # Volume
 sketchybar --add item volume right \
