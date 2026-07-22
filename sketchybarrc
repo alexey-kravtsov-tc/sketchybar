@@ -5,37 +5,31 @@ sketchybar --remove '/.*/' 2>/dev/null
 
 # Bar Configuration (Bottom position for AeroSpace compatibility)
 sketchybar --bar position=bottom \
-                  height=38 \
-                  color=0xff1e1e2e \
-                  border_color=0xff313244 \
-                  border_width=1 \
+                  height=20 \
+                  color=0xff1a1a1a \
+                  border_color=0xff333333 \
+                  border_width=0 \
                   topmost=window \
                   sticky=on \
-                  padding_left=10 \
-                  padding_right=10
+                  padding_left=0 \
+                  padding_right=0
 
 # Default styling for "pill capsule" widgets
-sketchybar --default background.color=0xff313244 \
-                      background.corner_radius=6 \
-                      background.height=26 \
-                      label.color=0xffcdd6f4 \
-                      label.padding_left=10 \
-                      label.padding_right=10
+sketchybar --default background.color=0xff333333 \
+                      background.corner_radius=4 \
+                      background.height=16 \
+                      label.color=0xffeeeeee \
+                      label.font="Hack Nerd Font:Bold:12.0" \
+                      icon.font="Hack Nerd Font:Bold:12.0" \
+                      label.padding_left=4 \
+                      label.padding_right=4
 
 # --- LEFT SIDE ITEMS ---
 
-# AeroSpace Workspace Badge
+# AeroSpace workspace badge
 sketchybar --add item space left \
            --set space update_freq=1 \
-                       script="$CONFIG_DIR/plugins/aerospace.sh" \
-                       background.color=0xff89b4fa \
-                       label.color=0xff11111b
-
-# Open App Name
-sketchybar --add item front_app left \
-           --set front_app script="$CONFIG_DIR/plugins/front_app.sh" \
-                           background.color=0xff181825 \
-           --subscribe front_app front_app_switched
+                        script="$CONFIG_DIR/plugins/aerospace.sh"
 
 # --- RIGHT SIDE ITEMS ---
 
