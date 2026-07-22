@@ -40,8 +40,25 @@ sketchybar --subscribe aerospace_handler aerospace_workspace_change routine
 # Clock
 sketchybar --add item clock right \
            --set clock update_freq=10 \
-                        script="$CONFIG_DIR/plugins/clock.sh"
-sketchybar --subscribe clock mouse.entered mouse.exited
+                        script="$CONFIG_DIR/plugins/clock.sh" \
+                        popup.y_offset=-250 \
+                        popup.blur_radius=8 \
+                        popup.background.color=0xff1a1a1a
+sketchybar --subscribe clock mouse.entered mouse.exited mouse.clicked
+
+# Calendar popup items
+for i in $(seq 0 9); do
+  sketchybar --add item "clock_event_$i" popup.clock \
+             --set "clock_event_$i" \
+                   drawing=off \
+                   icon="·" \
+                   icon.padding_left=6 \
+                   icon.padding_right=4 \
+                   label.padding_right=6 \
+                   background.height=20
+done
+sketchybar --set clock_event_0 icon="󰃈" \
+           --set clock_event_0 icon.padding_left=6 icon.padding_right=4
 
 # Battery
 sketchybar --add item battery right \
