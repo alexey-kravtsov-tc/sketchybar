@@ -56,6 +56,26 @@ sketchybar --add item wifi right \
                           click_script="open x-apple.systempreferences:com.apple.preference.network"
 sketchybar --subscribe wifi mouse.entered mouse.exited
 
+# Now Playing
+sketchybar --add item media_next right \
+           --set media_next script="$CONFIG_DIR/plugins/media_next.sh" \
+                       icon="⏭" \
+                       label.padding_left=2
+sketchybar --subscribe media_next media_change routine mouse.entered mouse.exited mouse.clicked
+
+sketchybar --add item media right \
+           --set media update_freq=10 \
+                       script="$CONFIG_DIR/plugins/media.sh" \
+                       label.padding_left=6 \
+                       icon.padding_right=6
+sketchybar --subscribe media media_change routine mouse.entered mouse.exited mouse.clicked
+
+sketchybar --add item media_prev right \
+           --set media_prev script="$CONFIG_DIR/plugins/media_prev.sh" \
+                       icon="⏮" \
+                       label.padding_left=2
+sketchybar --subscribe media_prev media_change routine mouse.entered mouse.exited mouse.clicked
+
 # Keyboard Layout
 sketchybar --add item kb_layout right \
            --set kb_layout update_freq=5 \
