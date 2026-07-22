@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# SketchyBar temp files
+*.tmp
+*.log
+socket-*
+
+# Node / npm
+node_modules/
+npm-debug.log
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# Credentials (should never be committed)
+*.pem
+*.key
+client_secret.json
+credentials.json
