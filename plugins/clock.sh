@@ -11,16 +11,34 @@ refresh_events() {
             [.summary, .start] | @tsv
         ' > "$TMPFILE"
 
+    now=$(date +%s)
     i=0
     while IFS='	' read -r summary start; do
         summary=$(echo "$summary" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
         if echo "$start" | grep -q T; then
             start_stripped=$(echo "$start" | sed 's/\([+-][0-9]\{2\}\):\([0-9]\{2\}\)/\1\2/')
-            start_fmt=$(date -j -f "%Y-%m-%dT%H:%M:%S%z" "$start_stripped" "+%b %d %H:%M" 2>/dev/null || echo "$start")
+            start_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%S%z" "$start_stripped" +%s 2>/dev/null)
         else
-            start_fmt=$(date -j -f "%Y-%m-%d" "$start" "+%b %d" 2>/dev/null || echo "$start")
+            start_epoch=$(date -j -f "%Y-%m-%d" "$start" +%s 2>/dev/null)
         fi
-        sketchybar --set "clock_event_$i" label="${summary}  ${start_fmt}" \
+        if [ -n "$start_epoch" ]; then
+            diff=$((start_epoch - now))
+            if [ $diff -lt 0 ]; then
+                rel="now"
+            elif [ $diff -lt 3600 ]; then
+                minutes=$(( (diff + 30) / 60 ))
+                rel="in ${minutes} min"
+            elif [ $diff -lt 86400 ]; then
+                hours=$(( (diff + 1800) / 3600 ))
+                rel="in ${hours} h"
+            else
+                days=$(( (diff + 43200) / 86400 ))
+                rel="in ${days} d"
+            fi
+        else
+            rel=""
+        fi
+        sketchybar --set "clock_event_$i" label="${summary}  ${rel}" \
                                         drawing=on
         i=$((i+1))
     done < "$TMPFILE"
