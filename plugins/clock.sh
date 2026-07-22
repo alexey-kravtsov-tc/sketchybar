@@ -1,17 +1,15 @@
 #!/bin/sh
 
-if [ "$SENDER" = "mouse.entered" ]; then
-    sketchybar --set "$NAME" background.color=0xff484848
-    exit 0
-elif [ "$SENDER" = "mouse.exited" ]; then
-    sketchybar --set "$NAME" background.color=0xff333333
-    exit 0
-elif [ "$SENDER" = "mouse.clicked" ]; then
-    sketchybar --set "$NAME" popup.drawing=toggle
-
+refresh_events() {
     TMPFILE=$(mktemp)
     gws calendar +agenda --days 30 --format json 2>/dev/null |
-        jq -r '.events[0:10][] | [.summary, .start] | @tsv' > "$TMPFILE"
+        jq -r '
+            .events |
+            sort_by(.start) | reverse |
+            group_by(.summary) | map(first) |
+            .[0:10][] |
+            [.summary, .start] | @tsv
+        ' > "$TMPFILE"
 
     i=0
     while IFS='	' read -r summary start; do
@@ -32,6 +30,20 @@ elif [ "$SENDER" = "mouse.clicked" ]; then
         sketchybar --set "clock_event_$i" drawing=off
         i=$((i+1))
     done
+}
+
+if [ "$SENDER" = "mouse.entered" ]; then
+    sketchybar --set "$NAME" background.color=0xff484848
+    exit 0
+elif [ "$SENDER" = "mouse.exited" ]; then
+    sketchybar --set "$NAME" background.color=0xff333333
+    exit 0
+elif [ "$SENDER" = "mouse.clicked" ]; then
+    sketchybar --set "$NAME" popup.drawing=toggle
+    refresh_events
+    exit 0
+elif [ "$SENDER" = "timer" ]; then
+    refresh_events
     exit 0
 fi
 
