@@ -86,6 +86,6 @@ sketchybar --subscribe kb_layout mouse.entered mouse.exited
 sketchybar --add item volume right \
            --set volume update_freq=5 \
                         script="$CONFIG_DIR/plugins/volume.sh"
-sketchybar --subscribe volume mouse.entered mouse.exited
+sketchybar --subscribe volume mouse.entered mouse.exited mouse.clicked
 
 sketchybar --update

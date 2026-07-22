@@ -6,6 +6,9 @@ if [ "$SENDER" = "mouse.entered" ]; then
 elif [ "$SENDER" = "mouse.exited" ]; then
     sketchybar --set "$NAME" background.color=0xff333333
     exit 0
+elif [ "$SENDER" = "mouse.clicked" ]; then
+    osascript -e "set volume output muted (not output muted of (get volume settings))"
+    exit 0
 fi
 
 VOL=$(osascript -e "output volume of (get volume settings)" 2>/dev/null)
