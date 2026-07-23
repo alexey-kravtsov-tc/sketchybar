@@ -102,12 +102,12 @@ sketchybar --subscribe kb_layout mouse.entered mouse.exited mouse.clicked
 
 # Volume Slider (using volume_change event and slider component)
 sketchybar --add slider volume_slider right 100 \
-    --set volume_slider script="$CONFIG_DIR/plugins/volume_slider.sh" \
-        click_script="osascript -e 'set volume output volume $(( $PERCENTAGE ))'" \
-        slider.percentage=0 \
-        slider.knob="●" \
-        slider.background.color=0xff555555 \
-        slider.height=12 \
+    --set volume_slider script="$CONFIG_DIR/plugins/volume.sh" \
+        slider.highlight_color=0xff98be65 \
+        slider.background.height=6 \
+        slider.background.corner_radius=3 \
+        slider.background.color=0xff3b4252 \
+        slider.knob="􀀁" \
         label.font="Hack Nerd Font:Bold:12.0" \
         label.color=0xffeeeeee \
         label.padding_left=4 \
