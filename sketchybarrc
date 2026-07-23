@@ -100,10 +100,18 @@ sketchybar --add item kb_layout right \
                            script="$CONFIG_DIR/plugins/kb_layout.sh"
 sketchybar --subscribe kb_layout mouse.entered mouse.exited mouse.clicked
 
-# Volume
-sketchybar --add item volume right \
-           --set volume update_freq=5 \
-                        script="$CONFIG_DIR/plugins/volume.sh"
-sketchybar --subscribe volume mouse.entered mouse.exited mouse.clicked
+# Volume Slider (using volume_change event and slider component)
+sketchybar --add slider volume_slider right 100 \
+    --set volume_slider script="$CONFIG_DIR/plugins/volume_slider.sh" \
+        click_script="osascript -e 'set volume output volume $(( $PERCENTAGE ))'" \
+        slider.percentage=0 \
+        slider.knob="●" \
+        slider.background.color=0xff555555 \
+        slider.height=12 \
+        label.font="Hack Nerd Font:Bold:12.0" \
+        label.color=0xffeeeeee \
+        label.padding_left=4 \
+        label.padding_right=4
+sketchybar --subscribe volume_slider volume_change mouse.clicked
 
 sketchybar --update
