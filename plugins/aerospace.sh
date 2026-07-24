@@ -28,7 +28,11 @@ if [ "$NAME" != "aerospace_handler" ]; then
     fi
     exit 0
   fi
-  # For any other sender (e.g. mouse.clicked) we do nothing special
+  if [ "$SENDER" = "mouse.clicked" ]; then
+    WS_ID="${NAME#ws}"
+    aerospace workspace "$WS_ID" 2>/dev/null
+    exit 0
+  fi
   exit 0
 fi
 
@@ -90,7 +94,7 @@ for ws in $ALL_WS; do
                label="${ws}: $APP_STR" \
                background.color="$BG_COLOR" \
                script="$CONFIG_DIR/plugins/aerospace.sh"
-    sketchybar --subscribe "ws${ws}" mouse.entered mouse.exited
+    sketchybar --subscribe "ws${ws}" mouse.entered mouse.exited mouse.clicked
   fi
 
 done
