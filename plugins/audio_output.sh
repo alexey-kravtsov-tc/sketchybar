@@ -53,6 +53,11 @@ if [ "$1" = "refresh" ]; then
 fi
 
 if [ "$SENDER" = "mouse.entered" ]; then
+    # If this is a popup item, just set hover flag
+    case "$NAME" in
+        audio_output_[0-9]*) echo "1" > /tmp/sketchybar_audio_hover; exit 0 ;;
+    esac
+    echo "1" > /tmp/sketchybar_audio_hover
     populate_popup
     sketchybar --set $NAME popup.drawing=on
     ( fetch_devices; POPUP=$(sketchybar --query audio_output 2>/dev/null | grep -o '"popup" : {[^}]*}' | grep -o '"drawing" : [01]' | grep -o '[01]'); if [ "$POPUP" = "1" ]; then populate_popup; fi ) &
@@ -60,7 +65,18 @@ if [ "$SENDER" = "mouse.entered" ]; then
 fi
 
 if [ "$SENDER" = "mouse.exited" ]; then
-    sketchybar --set $NAME popup.drawing=off
+    # If this is a popup item, start close timer
+    case "$NAME" in
+        audio_output_[0-9]*) echo "0" > /tmp/sketchybar_audio_hover; ( sleep 1; HOVER=$(cat /tmp/sketchybar_audio_hover 2>/dev/null); if [ "$HOVER" != "1" ]; then sketchybar --set audio_output popup.drawing=off; fi ) & exit 0 ;;
+    esac
+    echo "0" > /tmp/sketchybar_audio_hover
+    (
+        sleep 1
+        HOVER=$(cat /tmp/sketchybar_audio_hover 2>/dev/null)
+        if [ "$HOVER" != "1" ]; then
+            sketchybar --set $NAME popup.drawing=off
+        fi
+    ) &
     exit 0
 fi
 

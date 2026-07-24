@@ -129,6 +129,7 @@ for i in $(seq 0 19); do
   sketchybar --add item "audio_output_$i" popup.audio_output \
       --set "audio_output_$i" \
           drawing=off \
+          script="$CONFIG_DIR/plugins/audio_output.sh" \
           icon="·" \
           icon.padding_left=6 \
           icon.padding_right=4 \
@@ -136,7 +137,7 @@ for i in $(seq 0 19); do
           label.width=280 \
           width=300 \
           background.height=20
-  sketchybar --subscribe "audio_output_$i" mouse.exited
+  sketchybar --subscribe "audio_output_$i" mouse.entered mouse.exited
 done
 
 # Mic Input (current device label + popup list with mute option)
@@ -155,6 +156,7 @@ for i in $(seq 0 19); do
   sketchybar --add item "mic_input_$i" popup.mic_input \
       --set "mic_input_$i" \
           drawing=off \
+          script="$CONFIG_DIR/plugins/mic_input.sh" \
           icon="·" \
           icon.padding_left=6 \
           icon.padding_right=4 \
@@ -162,7 +164,7 @@ for i in $(seq 0 19); do
           label.width=280 \
           width=300 \
           background.height=20
-  sketchybar --subscribe "mic_input_$i" mouse.exited
+  sketchybar --subscribe "mic_input_$i" mouse.entered mouse.exited
 done
 
 sketchybar --update

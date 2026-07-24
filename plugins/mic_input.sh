@@ -105,6 +105,10 @@ if [ "$SENDER" = "refresh" ]; then
 fi
 
 if [ "$SENDER" = "mouse.entered" ]; then
+    case "$NAME" in
+        mic_input_[0-9]*) echo "1" > /tmp/sketchybar_mic_hover; exit 0 ;;
+    esac
+    echo "1" > /tmp/sketchybar_mic_hover
     populate_popup
     sketchybar --set $NAME popup.drawing=on
     ( fetch_devices; POPUP=$(sketchybar --query mic_input 2>/dev/null | grep -o '"popup" : {[^}]*}' | grep -o '"drawing" : [01]' | grep -o '[01]'); if [ "$POPUP" = "1" ]; then populate_popup; fi ) &
@@ -112,7 +116,17 @@ if [ "$SENDER" = "mouse.entered" ]; then
 fi
 
 if [ "$SENDER" = "mouse.exited" ]; then
-    sketchybar --set $NAME popup.drawing=off
+    case "$NAME" in
+        mic_input_[0-9]*) echo "0" > /tmp/sketchybar_mic_hover; ( sleep 1; HOVER=$(cat /tmp/sketchybar_mic_hover 2>/dev/null); if [ "$HOVER" != "1" ]; then sketchybar --set mic_input popup.drawing=off; fi ) & exit 0 ;;
+    esac
+    echo "0" > /tmp/sketchybar_mic_hover
+    (
+        sleep 1
+        HOVER=$(cat /tmp/sketchybar_mic_hover 2>/dev/null)
+        if [ "$HOVER" != "1" ]; then
+            sketchybar --set $NAME popup.drawing=off
+        fi
+    ) &
     exit 0
 fi
 
