@@ -104,25 +104,15 @@ if [ "$SENDER" = "refresh" ]; then
     exit 0
 fi
 
-if [ "$SENDER" = "mouse.clicked" ]; then
-    # Toggle popup
-    CURRENT=$(sketchybar --query $NAME 2>/dev/null | grep -o '"popup" : {[^}]*}' | grep -o '"drawing" : [01]' | grep -o '[01]')
-    if [ "$CURRENT" = "1" ]; then
-        sketchybar --set $NAME popup.drawing=off
-        exit 0
-    fi
-
+if [ "$SENDER" = "mouse.entered" ]; then
     populate_popup
     sketchybar --set $NAME popup.drawing=on
+    ( fetch_devices; POPUP=$(sketchybar --query mic_input 2>/dev/null | grep -o '"popup" : {[^}]*}' | grep -o '"drawing" : [01]' | grep -o '[01]'); if [ "$POPUP" = "1" ]; then populate_popup; fi ) &
+    exit 0
+fi
 
-    # Refresh in background
-    (
-        fetch_devices
-        POPUP=$(sketchybar --query mic_input 2>/dev/null | grep -o '"popup" : {[^}]*}' | grep -o '"drawing" : [01]' | grep -o '[01]')
-        if [ "$POPUP" = "1" ]; then
-            populate_popup
-        fi
-    ) &
+if [ "$SENDER" = "mouse.exited" ]; then
+    sketchybar --set $NAME popup.drawing=off
     exit 0
 fi
 

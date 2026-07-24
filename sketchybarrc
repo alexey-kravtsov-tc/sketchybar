@@ -122,7 +122,7 @@ sketchybar --add item audio_output right \
         popup.blur_radius=8 \
         popup.background.color=0xff222222 \
         popup.width=300
-sketchybar --subscribe audio_output mouse.clicked routine
+sketchybar --subscribe audio_output mouse.entered mouse.exited routine
 
 # Audio Output popup items (up to 20 devices)
 for i in $(seq 0 19); do
@@ -136,6 +136,7 @@ for i in $(seq 0 19); do
           label.width=280 \
           width=300 \
           background.height=20
+  sketchybar --subscribe "audio_output_$i" mouse.exited
 done
 
 # Mic Input (current device label + popup list with mute option)
@@ -147,7 +148,7 @@ sketchybar --add item mic_input right \
         popup.blur_radius=8 \
         popup.background.color=0xff222222 \
         popup.width=300
-sketchybar --subscribe mic_input mouse.clicked routine
+sketchybar --subscribe mic_input mouse.entered mouse.exited routine
 
 # Mic Input popup items (up to 20 slots)
 for i in $(seq 0 19); do
@@ -161,6 +162,7 @@ for i in $(seq 0 19); do
           label.width=280 \
           width=300 \
           background.height=20
+  sketchybar --subscribe "mic_input_$i" mouse.exited
 done
 
 sketchybar --update
