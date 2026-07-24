@@ -39,7 +39,7 @@ sketchybar --subscribe aerospace_handler aerospace_workspace_change routine
 
 # Clock
 sketchybar --add item clock right \
-           --set clock update_freq=300 \
+           --set clock update_freq=60 \
                         script="$CONFIG_DIR/plugins/clock.sh" \
                         popup.align=center \
                         popup.blur_radius=8 \

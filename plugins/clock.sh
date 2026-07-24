@@ -65,7 +65,7 @@ elif [ "$SENDER" = "mouse.clicked" ]; then
     sketchybar --set "$NAME" popup.drawing=toggle
     refresh_events
     exit 0
-elif [ "$SENDER" = "update" ]; then
+elif [ "$SENDER" = "routine" ] || [ "$SENDER" = "update" ]; then
     refresh_events
 fi
 
