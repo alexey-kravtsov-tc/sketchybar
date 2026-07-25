@@ -109,6 +109,7 @@ if [ "$SENDER" = "mouse.entered" ]; then
         mic_input_[0-9]*) echo "1" > /tmp/sketchybar_mic_hover; exit 0 ;;
     esac
     echo "1" > /tmp/sketchybar_mic_hover
+    sketchybar --set audio_output popup.drawing=off
     populate_popup
     sketchybar --set $NAME popup.drawing=on
     ( fetch_devices; POPUP=$(sketchybar --query mic_input 2>/dev/null | grep -o '"popup" : {[^}]*}' | grep -o '"drawing" : [01]' | grep -o '[01]'); if [ "$POPUP" = "1" ]; then populate_popup; fi ) &
