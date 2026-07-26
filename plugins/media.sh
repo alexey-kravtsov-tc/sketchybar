@@ -16,8 +16,6 @@ HOVER_FLAG="/tmp/sketchybar_media_hover"
 # repeated hover/unhover). Mirrors plugins/volume.sh.
 TIMER_TAG="SKETCHYBAR_MEDIA_TIMER"
 
-. "${CONFIG_DIR}/plugins/_hover.sh"
-
 # ---------------------------------------------------------------------------
 # Timer helpers (single-instance popup-close via pkill -f marker)
 # ---------------------------------------------------------------------------

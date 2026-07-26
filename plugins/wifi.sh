@@ -25,8 +25,6 @@ SCAN_TAG="SKETCHYBAR_WIFI_SCAN"
 TIMER_TAG="SKETCHYBAR_WIFI_TIMER"
 CONFIG_DIRNorm="${CONFIG_DIR:-$HOME/.config/sketchybar}"
 
-. "${CONFIG_DIRNorm}/plugins/_hover.sh"
-
 # ---------------------------------------------------------------------------
 # Scan / cache helpers
 # ---------------------------------------------------------------------------
@@ -223,7 +221,6 @@ if [ "$SENDER" = "mouse.entered" ]; then
   esac
   echo "1" > "$HOVER_FLAG"
   kill_timer
-  apply_hover_on "$NAME"
   # Close any sibling popups (audio popups etc.)
   sketchybar --set volume    popup.drawing=off 2>/dev/null
   sketchybar --set mic        popup.drawing=off 2>/dev/null
@@ -236,10 +233,6 @@ fi
 
 if [ "$SENDER" = "mouse.exited" ]; then
   echo "0" > "$HOVER_FLAG"
-  case "$NAME" in
-    wifi_popup_[0-9]*) ;;  # row exit: only arm the close timer below.
-    *) apply_hover_off "$NAME" ;;
-  esac
   start_timer
   exit 0
 fi
