@@ -13,10 +13,17 @@ STATE_FILE="/tmp/sketchybar_gradle_worker_${PID}.pid"
 POLL_INTERVAL=2
 PREVIEW_LINES=15
 LINE_WIDTH=50  # cols; ~480px at JetBrains Mono 12pt
+MAX_LIFETIME=7200  # hard cap in seconds (2 hours) to bound orphan risk.
 
 START_MARKER='The daemon has started executing the build'
 FINISH_MARKER='The daemon has finished executing the build'
 IDLE_MARKER='Marking the daemon as idle'
+
+# Note our own start time so we can self-terminate if we outlive any
+# reasonable build (e.g. parent gradle.sh crashed mid-loop, the daemon
+# PID was reused by an unrelated process, or the daemon was kill -9'd
+# and the log never sees the finish marker).
+WORKER_START=$(date +%s)
 
 cleanup() {
   local i
@@ -61,6 +68,13 @@ done
 
 while true; do
   if ! kill -0 "$PID" 2>/dev/null; then
+    cleanup
+  fi
+
+  # Hard lifetime cap: bail out cleanly if we've run absurdly long. Guards
+  # against orphaned workers tailing a stale log or surviving PID reuse
+  # when the parent gradle.sh died and won't reap us.
+  if (( $(date +%s) - WORKER_START > MAX_LIFETIME )); then
     cleanup
   fi
 

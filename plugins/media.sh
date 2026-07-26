@@ -12,6 +12,30 @@ CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
 POPUP_ROWS="media_popup_0 media_popup_1 media_popup_2"
 HOVER_FLAG="/tmp/sketchybar_media_hover"
 
+# Single-instance popup-close timer (avoids stacking sleep subshells on
+# repeated hover/unhover). Mirrors plugins/volume.sh.
+TIMER_TAG="SKETCHYBAR_MEDIA_TIMER"
+
+. "${CONFIG_DIR}/plugins/_hover.sh"
+
+# ---------------------------------------------------------------------------
+# Timer helpers (single-instance popup-close via pkill -f marker)
+# ---------------------------------------------------------------------------
+
+kill_timer() { pkill -f "$TIMER_TAG" 2>/dev/null; }
+
+start_timer() {
+  kill_timer
+  (
+    exec -a "$TIMER_TAG" sh -c '
+      sleep 1
+      if [ "$(cat '"$HOVER_FLAG"' 2>/dev/null)" = "1" ]; then exit 0; fi
+      sketchybar --set media popup.drawing=off 2>/dev/null
+    '
+  ) 2>/dev/null &
+  disown 2>/dev/null
+}
+
 # ---------------------------------------------------------------------------
 # Playback helpers
 # ---------------------------------------------------------------------------
@@ -88,10 +112,11 @@ case "$SENDER" in
 
   mouse.entered)
     case "$NAME" in
-      media_popup_[0-9]) echo "1" > "$HOVER_FLAG"; hover_row_on "$NAME"; exit 0 ;;
+      media_popup_[0-9]) echo "1" > "$HOVER_FLAG"; kill_timer; hover_row_on "$NAME"; exit 0 ;;
     esac
     if [ "$NAME" = "media" ]; then
       echo "1" > "$HOVER_FLAG"
+      kill_timer
       apply_hover_on "$NAME"
       populate_popup
       sketchybar --set media popup.drawing=on 2>/dev/null
@@ -101,17 +126,12 @@ case "$SENDER" in
 
   mouse.exited)
     case "$NAME" in
-      media_popup_[0-9]) echo "0" > "$HOVER_FLAG"; hover_row_off "$NAME"; exit 0 ;;
+      media_popup_[0-9]) echo "0" > "$HOVER_FLAG"; hover_row_off "$NAME"; start_timer; exit 0 ;;
     esac
     if [ "$NAME" = "media" ]; then
       echo "0" > "$HOVER_FLAG"
       apply_hover_off "$NAME"
-      ( sleep 1
-        HOVER=$(cat "$HOVER_FLAG" 2>/dev/null)
-        if [ "$HOVER" != "1" ]; then
-          sketchybar --set media popup.drawing=off 2>/dev/null
-        fi
-      ) &
+      start_timer
     fi
     exit 0
     ;;

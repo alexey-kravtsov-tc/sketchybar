@@ -78,9 +78,16 @@ gradle::render_active() {
 
 gradle::spawn_worker() {
   local pid="$1"
-  [[ -f "/tmp/sketchybar_gradle_worker_${pid}.pid" ]] && return
+  local pidfile="/tmp/sketchybar_gradle_worker_${pid}.pid"
+  # Atomic create: succeeds only if the file didn't exist. This closes the
+  # race where two concurrent routine ticks spawn a second worker for the
+  # same Gradle daemon PID; the loser exits 0 without forking a process.
+  if ! ( set -C; echo $$ > "$pidfile" ) 2>/dev/null; then
+    return
+  fi
   nohup "$WORKER_SCRIPT" "$pid" >/dev/null 2>&1 &!
-  echo $! > "/tmp/sketchybar_gradle_worker_${pid}.pid"
+  # Overwrite the marker (now safely owned) with the actual worker PID.
+  echo $! > "$pidfile"
 }
 
 gradle::reap_workers() {

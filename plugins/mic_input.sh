@@ -18,7 +18,7 @@ SLIDER="mic_slider"
 POPUP_PREFIX="mic_input"
 
 HOVER_FLAG="/tmp/sketchybar_mic_hover"
-TIMER_PID="/tmp/sketchybar_mic_timer_pid"
+TIMER_TAG="SKETCHYBAR_MIC_TIMER"
 
 . "${CONFIG_DIR:-$HOME/.config/sketchybar}/plugins/_hover.sh"
 
@@ -31,6 +31,10 @@ short_name() {
 
 # --- Source helpers ----------------------------------------------------
 
+# Single-instance tag for the background fetch (avoids overlapping
+# SwitchAudioSource processes on rapid routine ticks).
+FETCH_TAG="SKETCHYBAR_MIC_FETCH"
+
 fetch_devices() {
     SwitchAudioSource -a -t input 2>/dev/null > "$DEVICES_CACHE.tmp"
     mv "$DEVICES_CACHE.tmp" "$DEVICES_CACHE"
@@ -38,7 +42,21 @@ fetch_devices() {
     mv "$CURRENT_CACHE.tmp" "$CURRENT_CACHE"
 }
 
-refresh_in_background() { ( fetch_devices ) & }
+refresh_in_background() {
+    pkill -f "$FETCH_TAG" 2>/dev/null
+    (
+        exec -a "$FETCH_TAG" sh -c '
+            "'"$CONFIG_DIR"'"/plugins/mic_input.sh __fetch
+        '
+    ) 2>/dev/null &
+    disown 2>/dev/null
+}
+
+# Hidden entry-point invoked by the background fetch.
+if [ "$1" = "__fetch" ]; then
+    fetch_devices
+    exit 0
+fi
 
 current_input() {
     [ -f "$CURRENT_CACHE" ] && cat "$CURRENT_CACHE" && return
@@ -119,28 +137,31 @@ populate_popup() {
 }
 
 # --- Timer helpers -----------------------------------------------------
+#
+# Single-instance collapse timer using pkill -f so concurrent mouse.exited
+# events cannot pile up children. See comments in plugins/volume.sh.
 
 kill_timer() {
-    if [ -f "$TIMER_PID" ]; then
-        OLD_PID=$(cat "$TIMER_PID" 2>/dev/null)
-        if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
-            kill "$OLD_PID" 2>/dev/null
-        fi
-        rm -f "$TIMER_PID"
-    fi
+    pkill -f "$TIMER_TAG" 2>/dev/null
 }
 
 start_timer() {
     kill_timer
     (
-        sleep "$HOLD_SECONDS"
-        HOVER=$(cat "$HOVER_FLAG" 2>/dev/null)
-        if [ "$HOVER" != "1" ]; then
-            collapse
-        fi
-    ) &
-    echo $! > "$TIMER_PID"
+        exec -a "$TIMER_TAG" sh -c '
+            sleep '"$HOLD_SECONDS"'
+            if [ "$(cat '"$HOVER_FLAG"' 2>/dev/null)" = "1" ]; then exit 0; fi
+            '"$CONFIG_DIR"'/plugins/mic_input.sh __collapse
+        '
+    ) 2>/dev/null &
+    disown 2>/dev/null
 }
+
+# Background-only entry point invoked by the collapse timer.
+if [ "$1" = "__collapse" ]; then
+    collapse
+    exit 0
+fi
 
 # --- Entry points ------------------------------------------------------
 
@@ -164,18 +185,6 @@ if [ -z "$SENDER" ] || [ "$SENDER" = "forced" ] || [ "$SENDER" = "routine" ]; th
     render_idle_label
     MIC=$(get_mic_level)
     sketchybar --set "$SLIDER" slider.percentage="$MIC"
-    exit 0
-fi
-
-# Periodic device-list refresh.
-if [ "$1" = "refresh_devices" ]; then
-    refresh_in_background
-    POPUP_ON=$(sketchybar --query "$ITEM" 2>/dev/null | grep -o '"popup" : {[^}]*}' | grep -o '"drawing" : [01]' | grep -o '[01]')
-    if [ "$POPUP_ON" = "1" ]; then
-        populate_popup
-    else
-        render_idle_label
-    fi
     exit 0
 fi
 
