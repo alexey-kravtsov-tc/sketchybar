@@ -144,11 +144,12 @@ for row in 0 1 2; do
                    label.padding_right=10 \
                    label.padding_top=4 \
                    label.padding_bottom=4 \
-                   background.color=0xff222222 \
-                   background.corner_radius=4 \
-                   background.padding_left=4 \
-                   background.padding_right=4 \
-                   width=240
+                    background.color=0xff222222 \
+                    background.corner_radius=4 \
+                    background.padding_left=4 \
+                    background.padding_right=4 \
+                    width=240
+  sketchybar --subscribe "media_popup_${row}" mouse.entered mouse.exited
 done
 
 # Keyboard Layout

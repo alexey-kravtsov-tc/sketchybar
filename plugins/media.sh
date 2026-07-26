@@ -61,6 +61,22 @@ populate_popup() {
 # Event dispatch
 # ---------------------------------------------------------------------------
 
+# Invert a popup row's colors (hover effect).
+hover_row_on() {
+  sketchybar --set "$1" \
+    background.color=0xffeeeeee \
+    label.color=0xff222222 \
+    icon.color=0xff222222 2>/dev/null
+}
+
+# Restore a popup row's default (dark pill) colors.
+hover_row_off() {
+  sketchybar --set "$1" \
+    background.color=0xff222222 \
+    label.color=0xffeeeeee \
+    icon.color=0xffffffff 2>/dev/null
+}
+
 case "$SENDER" in
   popup)
     # Force-refresh popup content (used by click scripts).
@@ -69,6 +85,9 @@ case "$SENDER" in
     ;;
 
   mouse.entered)
+    case "$NAME" in
+      media_popup_[0-9]) echo "1" > "$HOVER_FLAG"; hover_row_on "$NAME"; exit 0 ;;
+    esac
     if [ "$NAME" = "media" ]; then
       echo "1" > "$HOVER_FLAG"
       populate_popup
@@ -78,6 +97,9 @@ case "$SENDER" in
     ;;
 
   mouse.exited)
+    case "$NAME" in
+      media_popup_[0-9]) echo "0" > "$HOVER_FLAG"; hover_row_off "$NAME"; exit 0 ;;
+    esac
     if [ "$NAME" = "media" ]; then
       echo "0" > "$HOVER_FLAG"
       ( sleep 1
