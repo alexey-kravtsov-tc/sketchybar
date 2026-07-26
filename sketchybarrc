@@ -35,6 +35,25 @@ sketchybar --add item aerospace_handler left \
                                  drawing=off
 sketchybar --subscribe aerospace_handler aerospace_workspace_change routine
 
+# --- CENTER ITEMS ---
+
+# Gradle Daemons monitor (hidden unless active builds are running).
+# Popup of log previews only toggles on mouse click (off by default).
+sketchybar --add event gradle_update
+sketchybar --add item gradle center \
+           --set gradle update_freq=10 \
+                          script="$CONFIG_DIR/plugins/gradle/gradle.sh" \
+                          drawing=off \
+                          popup.drawing=off \
+                          icon="" \
+                          label.font="Hack Nerd Font:Bold:12.0" \
+                          label.color=0xffeeeeee \
+                          popup.align=center \
+                          popup.blur_radius=8 \
+                          popup.background.color=0xff111111 \
+                          popup.width=480
+sketchybar --subscribe gradle routine forced system_woke gradle_update mouse.clicked
+
 # --- RIGHT SIDE ITEMS ---
 
 # Clock
@@ -75,24 +94,36 @@ sketchybar --add item wifi right \
 sketchybar --subscribe wifi mouse.entered mouse.exited
 
 # Now Playing
-sketchybar --add item media_next right \
-           --set media_next script="$CONFIG_DIR/plugins/media_next.sh" \
-                       icon="⏭" \
-                       label.padding_left=2
-sketchybar --subscribe media_next media_change routine mouse.entered mouse.exited mouse.clicked
-
+# Main media item: shows currently playing track title/artist + popup panel on click
 sketchybar --add item media right \
            --set media update_freq=10 \
                        script="$CONFIG_DIR/plugins/media.sh" \
                        label.padding_left=6 \
-                       icon.padding_right=6
+                       icon.padding_right=6 \
+                       popup.align=center \
+                       popup.blur_radius=8 \
+                       popup.background.color=0xff222222 \
+                       popup.width=260
 sketchybar --subscribe media media_change routine mouse.entered mouse.exited mouse.clicked
 
-sketchybar --add item media_prev right \
-           --set media_prev script="$CONFIG_DIR/plugins/media_prev.sh" \
-                       icon="⏮" \
-                       label.padding_left=2
-sketchybar --subscribe media_prev media_change routine mouse.entered mouse.exited mouse.clicked
+# Popup rows inside `media` popup: previous / play-pause / next
+for row in 0 1 2; do
+  sketchybar --add item "media_popup_${row}" popup.media \
+             --set "media_popup_${row}" \
+                   drawing=off \
+                   label.font="Hack Nerd Font:Bold:14.0" \
+                   label.color=0xffeeeeee \
+                   label.align=center \
+                   label.padding_left=10 \
+                   label.padding_right=10 \
+                   label.padding_top=4 \
+                   label.padding_bottom=4 \
+                   background.color=0xff222222 \
+                   background.corner_radius=4 \
+                   background.padding_left=4 \
+                   background.padding_right=4 \
+                   width=240
+done
 
 # Keyboard Layout
 sketchybar --add item kb_layout right \

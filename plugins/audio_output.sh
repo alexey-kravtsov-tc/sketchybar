@@ -32,13 +32,8 @@ populate_popup() {
     i=0
     while IFS= read -r line; do
         [ -z "$line" ] && continue
-        if [ "$line" = "$CURRENT_OUT" ]; then
-            PREFIX="> "
-        else
-            PREFIX=""
-        fi
         sketchybar --set "audio_output_$i" drawing=on \
-            label="${PREFIX}${line}" \
+            label="$line" \
             click_script="SwitchAudioSource -s '$line' 2>/dev/null; sketchybar --set audio_output popup.drawing=off; CURRENT=\$(SwitchAudioSource -c 2>/dev/null); SHORT=\$(echo \"\$CURRENT\" | sed 's/MacBook Pro/MBP/; s/Realtek USB2.0/Realtek/'); sketchybar --set audio_output label=\"\$SHORT\"; \$CONFIG_DIR/plugins/audio_output.sh refresh"
         i=$((i + 1))
     done < "$CACHE_FILE"

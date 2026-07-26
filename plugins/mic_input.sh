@@ -36,23 +36,6 @@ populate_popup() {
 
     i=0
 
-    # "Turn Off" option at top
-    MUTED=""
-    [ -f "$MUTED_FLAG" ] && MUTED="1"
-    if [ "$MUTED" = "1" ]; then
-        sketchybar --set "mic_input_$i" drawing=on label="> Mic Off" \
-            click_script="cd '$CONFIG_DIR/plugins' && SENDER=unmute NAME=mic_input ./mic_input.sh; sketchybar --set mic_input popup.drawing=off"
-    else
-        sketchybar --set "mic_input_$i" drawing=on label="Mic Off" \
-            click_script="cd '$CONFIG_DIR/plugins' && SENDER=mute NAME=mic_input ./mic_input.sh; sketchybar --set mic_input popup.drawing=off"
-    fi
-    i=$((i + 1))
-
-    # Separator
-    sketchybar --set "mic_input_$i" drawing=on label="──────────" \
-        click_script=""
-    i=$((i + 1))
-
     CURRENT_IN=""
     [ -f "$CURRENT_CACHE" ] && CURRENT_IN=$(cat "$CURRENT_CACHE")
 
@@ -63,13 +46,8 @@ populate_popup() {
 
     while IFS= read -r line; do
         [ -z "$line" ] && continue
-        if [ "$line" = "$CURRENT_IN" ]; then
-            PREFIX="> "
-        else
-            PREFIX=""
-        fi
         sketchybar --set "mic_input_$i" drawing=on \
-            label="${PREFIX}${line}" \
+            label="$line" \
             click_script="SwitchAudioSource -s '$line' -t input 2>/dev/null; echo '$line' > '$CURRENT_CACHE'; sketchybar --set mic_input popup.drawing=off; SHORT=\$(echo '$line' | sed 's/MacBook Pro/MBP/; s/Realtek USB2.0/Realtek/; s/Alexey.s/Lex/'); sketchybar --set mic_input label=\"\$SHORT\"; (cd '$CONFIG_DIR/plugins' && SENDER=refresh NAME=mic_input ./mic_input.sh) &"
         i=$((i + 1))
     done < "$CACHE_FILE"
