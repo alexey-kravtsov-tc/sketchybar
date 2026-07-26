@@ -113,6 +113,7 @@ case "$SENDER" in
     if [ "$NAME" = "media" ]; then
       echo "1" > "$HOVER_FLAG"
       kill_timer
+      sketchybar --set media background.color=0xffeeeeee label.color=0xff222222 icon.color=0xff222222
       populate_popup
       sketchybar --set media popup.drawing=on 2>/dev/null
     fi
@@ -125,6 +126,7 @@ case "$SENDER" in
     esac
     if [ "$NAME" = "media" ]; then
       echo "0" > "$HOVER_FLAG"
+      sketchybar --set media background.color=0xff333333 label.color=0xffeeeeee icon.color=0xffffffff
       start_timer
     fi
     exit 0

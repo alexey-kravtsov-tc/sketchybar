@@ -221,6 +221,7 @@ if [ "$SENDER" = "mouse.entered" ]; then
   esac
   echo "1" > "$HOVER_FLAG"
   kill_timer
+  sketchybar --set wifi background.color=0xffeeeeee label.color=0xff222222 icon.color=0xff222222
   # Close any sibling popups (audio popups etc.)
   sketchybar --set volume    popup.drawing=off 2>/dev/null
   sketchybar --set mic        popup.drawing=off 2>/dev/null
@@ -233,6 +234,7 @@ fi
 
 if [ "$SENDER" = "mouse.exited" ]; then
   echo "0" > "$HOVER_FLAG"
+  [ "$NAME" = "wifi" ] && sketchybar --set wifi background.color=0xff333333 label.color=0xffeeeeee icon.color=0xffffffff
   start_timer
   exit 0
 fi

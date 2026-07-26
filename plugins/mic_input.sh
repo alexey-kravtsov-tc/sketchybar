@@ -213,6 +213,7 @@ if [ "$SENDER" = "mouse.entered" ]; then
     esac
     echo "1" > "$HOVER_FLAG"
     kill_timer
+    [ "$NAME" = "$ITEM" ] && sketchybar --set "$ITEM" background.color=0xffeeeeee label.color=0xff222222 icon.color=0xff222222
     exit 0
 fi
 
@@ -225,6 +226,7 @@ if [ "$SENDER" = "mouse.exited" ]; then
             exit 0 ;;
     esac
     echo "0" > "$HOVER_FLAG"
+    [ "$NAME" = "$ITEM" ] && sketchybar --set "$ITEM" background.color=0xff333333 label.color=0xffeeeeee icon.color=0xffffffff
     start_timer
     exit 0
 fi

@@ -56,10 +56,10 @@ refresh_events() {
 }
 
 if [ "$SENDER" = "mouse.entered" ]; then
-    sketchybar --set "$NAME" background.color=0xff484848
+    sketchybar --set "$NAME" background.color=0xffeeeeee label.color=0xff222222 icon.color=0xff222222
     exit 0
 elif [ "$SENDER" = "mouse.exited" ]; then
-    sketchybar --set "$NAME" background.color=0xff333333
+    sketchybar --set "$NAME" background.color=0xff333333 label.color=0xffeeeeee icon.color=0xffffffff
     exit 0
 elif [ "$SENDER" = "mouse.clicked" ]; then
     sketchybar --set "$NAME" popup.drawing=toggle
