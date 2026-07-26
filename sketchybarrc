@@ -137,6 +137,7 @@ for row in 0 1 2; do
   sketchybar --add item "media_popup_${row}" popup.media \
              --set "media_popup_${row}" \
                    drawing=off \
+                   script="$CONFIG_DIR/plugins/media.sh" \
                    label.font="Hack Nerd Font:Bold:14.0" \
                    label.color=0xffeeeeee \
                    label.align=center \
