@@ -20,8 +20,6 @@ POPUP_PREFIX="volume_output"
 HOVER_FLAG="/tmp/sketchybar_volume_hover"
 TIMER_TAG="SKETCHYBAR_VOLUME_TIMER"
 
-. "${CONFIG_DIR:-$HOME/.config/sketchybar}/plugins/_hover.sh"
-
 DEVICES_CACHE="/tmp/sketchybar_volume_devices.txt"
 CURRENT_CACHE="/tmp/sketchybar_volume_current.txt"
 
@@ -232,7 +230,6 @@ if [ "$SENDER" = "mouse.entered" ]; then
     esac
     echo "1" > "$HOVER_FLAG"
     kill_timer
-    [ "$NAME" = "$ITEM" ] && apply_hover_on "$NAME"
     exit 0
 fi
 
@@ -245,7 +242,6 @@ if [ "$SENDER" = "mouse.exited" ]; then
             exit 0 ;;
     esac
     echo "0" > "$HOVER_FLAG"
-    [ "$NAME" = "$ITEM" ] && apply_hover_off "$NAME"
     start_timer
     exit 0
 fi

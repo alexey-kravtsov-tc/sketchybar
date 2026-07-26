@@ -81,8 +81,6 @@ populate_popup() {
              2>/dev/null
 }
 
-. "${CONFIG_DIR:-$HOME/.config/sketchybar}/plugins/_hover.sh"
-
 # ---------------------------------------------------------------------------
 # Event dispatch
 # ---------------------------------------------------------------------------
@@ -117,7 +115,6 @@ case "$SENDER" in
     if [ "$NAME" = "media" ]; then
       echo "1" > "$HOVER_FLAG"
       kill_timer
-      apply_hover_on "$NAME"
       populate_popup
       sketchybar --set media popup.drawing=on 2>/dev/null
     fi
@@ -130,7 +127,6 @@ case "$SENDER" in
     esac
     if [ "$NAME" = "media" ]; then
       echo "0" > "$HOVER_FLAG"
-      apply_hover_off "$NAME"
       start_timer
     fi
     exit 0

@@ -1,12 +1,10 @@
 #!/bin/sh
 
-. "$CONFIG_DIR/plugins/_hover.sh" 2>/dev/null || . "${CONFIG_DIR:-$HOME/.config/sketchybar}/plugins/_hover.sh"
-
 if [ "$SENDER" = "mouse.entered" ]; then
-    apply_hover_on "$NAME"
+    sketchybar --set "$NAME" background.color=0xff484848
     exit 0
 elif [ "$SENDER" = "mouse.exited" ]; then
-    apply_hover_off "$NAME"
+    sketchybar --set "$NAME" background.color=0xff333333
     exit 0
 elif [ "$SENDER" = "mouse.clicked" ]; then
     # Optimistic: show next layout immediately, then actually switch
