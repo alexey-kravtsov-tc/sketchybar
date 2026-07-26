@@ -90,8 +90,34 @@ sketchybar --subscribe battery mouse.entered mouse.exited
 sketchybar --add item wifi right \
            --set wifi update_freq=10 \
                           script="$CONFIG_DIR/plugins/wifi.sh" \
-                          click_script="open x-apple.systempreferences:com.apple.preference.network"
-sketchybar --subscribe wifi mouse.entered mouse.exited
+                          popup.align=center \
+                          popup.blur_radius=8 \
+                          popup.background.color=0xff222222 \
+                          popup.width=280
+sketchybar --subscribe wifi mouse.entered mouse.exited routine
+
+# WiFi popup items (up to 20 nearby networks).
+for i in $(seq 0 19); do
+  sketchybar --add item "wifi_popup_$i" popup.wifi \
+             --set "wifi_popup_$i" \
+                   drawing=off \
+                   label.font="Hack Nerd Font:Bold:12.0" \
+                   label.color=0xffeeeeee \
+                   label.padding_left=8 \
+                   label.padding_right=8 \
+                   label.padding_top=3 \
+                   label.padding_bottom=3 \
+                   background.color=0xff222222 \
+                   background.padding_left=2 \
+                   background.padding_right=2 \
+                   background.padding_top=2 \
+                   background.padding_bottom=2 \
+                   background.corner_radius=4 \
+                   label.width=260 \
+                   width=276 \
+                   script="$CONFIG_DIR/plugins/wifi.sh"
+  sketchybar --subscribe "wifi_popup_$i" mouse.entered mouse.exited mouse.clicked
+done
 
 # Now Playing
 # Main media item: shows currently playing track title/artist + popup panel on click
@@ -131,45 +157,54 @@ sketchybar --add item kb_layout right \
                            script="$CONFIG_DIR/plugins/kb_layout.sh"
 sketchybar --subscribe kb_layout mouse.entered mouse.exited mouse.clicked
 
-# Volume Slider (using volume_change event and slider component)
+# Volume + Audio Output (merged):
+#   State 1: text label "{output} >> {volume}%" (no slider, no popup).
+#   State 2 (click): text blanked, slider visible, popup lists output devices
+#           with current marked (  bold ). Auto-collapses after pointer
+#           leaves the control for HOLD_SECONDS.
 
-sketchybar --add slider volume_slider right 100 \
-    --set volume_slider script="$CONFIG_DIR/plugins/volume.sh" \
-        slider.knob="●" \
-        slider.background.color=0xff555555 \
-        slider.height=12 \
+# Textual bar item; also acts as the popup anchor.
+sketchybar --add item volume right \
+    --set volume \
+        update_freq=10 \
+        script="$CONFIG_DIR/plugins/volume.sh" \
+        icon.drawing=off \
+        label="" \
         label.font="Hack Nerd Font:Bold:12.0" \
         label.color=0xffeeeeee \
         label.padding_left=4 \
-        label.padding_right=4
-sketchybar --subscribe volume_slider volume_change mouse.clicked
-
-# Audio Output (current device label + popup list for switching)
-sketchybar --add item audio_output right \
-    --set audio_output update_freq=10 \
-        script="$CONFIG_DIR/plugins/audio_output.sh" \
-        icon="" \
+        label.padding_right=4 \
         popup.align=center \
         popup.blur_radius=8 \
         popup.background.color=0xff222222 \
         popup.width=300
-sketchybar --subscribe audio_output mouse.entered mouse.exited routine
 
-# Audio Output popup items (up to 20 devices)
+# Slider (hidden by default; appears when the text item is clicked).
+sketchybar --add slider volume_slider right 200 \
+    --set volume_slider script="$CONFIG_DIR/plugins/volume.sh" \
+        slider.knob="●" \
+        slider.background.color=0xff555555 \
+        slider.height=12 \
+        drawing=off
+
+# Output device popup rows (parented to the merged volume item).
 for i in $(seq 0 19); do
-  sketchybar --add item "audio_output_$i" popup.audio_output \
-      --set "audio_output_$i" \
+  sketchybar --add item "volume_output_$i" popup.volume \
+      --set "volume_output_$i" \
           drawing=off \
-          script="$CONFIG_DIR/plugins/audio_output.sh" \
+          script="$CONFIG_DIR/plugins/volume.sh" \
           icon="·" \
           icon.padding_left=6 \
-          icon.padding_right=4 \
+          icon.padding_right=6 \
           label.padding_right=6 \
           label.width=280 \
           width=300 \
           background.height=20
-  sketchybar --subscribe "audio_output_$i" mouse.entered mouse.exited
+  sketchybar --subscribe "volume_output_$i" mouse.entered mouse.exited
 done
+
+sketchybar --subscribe volume mouse.clicked mouse.entered mouse.exited routine volume_change
+sketchybar --subscribe volume_slider mouse.clicked mouse.entered mouse.exited volume_change
 
 # Mic Input (current device label + popup list with mute option)
 sketchybar --add item mic_input right \
