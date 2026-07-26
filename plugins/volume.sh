@@ -150,6 +150,8 @@ start_timer() {
 
 # Called from a popup row's click_script after the user picks a device.
 if [ "$1" = "switch" ]; then
+    # Give CoreAudio a moment to register the newly-selected device.
+    sleep 0.3
     fetch_devices
     # Refresh current cached and re-render the idle label, but if the popup
     # is currently open (state 2), repopulate so the new current lights up.
@@ -162,12 +164,11 @@ if [ "$1" = "switch" ]; then
     exit 0
 fi
 
-# Volume change event or routine/init.
-if [ "$SENDER" = "volume_change" ] || [ -z "$SENDER" ]; then
-    # Initialize the device cache lazily on first run.
+# Volume change event or init/routine.
+if [ "$SENDER" = "volume_change" ] || [ -z "$SENDER" ] \
+   || [ "$SENDER" = "forced" ] || [ "$SENDER" = "routine" ]; then
     [ ! -f "$DEVICES_CACHE" ] && refresh_in_background
     render_idle_label
-    # Reflect new volume on the slider too.
     VOL=$(get_volume)
     sketchybar --set "$SLIDER" slider.percentage="$VOL"
     exit 0

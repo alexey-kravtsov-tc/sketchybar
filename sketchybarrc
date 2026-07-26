@@ -206,31 +206,51 @@ done
 sketchybar --subscribe volume mouse.clicked mouse.entered mouse.exited routine volume_change
 sketchybar --subscribe volume_slider mouse.clicked mouse.entered mouse.exited volume_change
 
-# Mic Input (current device label + popup list with mute option)
-sketchybar --add item mic_input right \
-    --set mic_input update_freq=10 \
+# Mic Input + Level (merged):
+#   State 1: text label "{mic level}% << {input source}".
+#   State 2 (click): text blanked, mic_slider visible, popup lists
+#           input devices with current marked (  + bold ).
+#   Auto-collapses after pointer leaves the control for HOLD_SECONDS.
+
+sketchybar --add item mic right \
+    --set mic \
+        update_freq=10 \
         script="$CONFIG_DIR/plugins/mic_input.sh" \
-        icon="" \
+        icon.drawing=off \
+        label="" \
+        label.font="Hack Nerd Font:Bold:12.0" \
+        label.color=0xffeeeeee \
+        label.padding_left=4 \
+        label.padding_right=4 \
         popup.align=center \
         popup.blur_radius=8 \
         popup.background.color=0xff222222 \
         popup.width=300
-sketchybar --subscribe mic_input mouse.entered mouse.exited routine
 
-# Mic Input popup items (up to 20 slots)
+sketchybar --add slider mic_slider right 200 \
+    --set mic_slider script="$CONFIG_DIR/plugins/mic_input.sh" \
+        slider.knob="●" \
+        slider.background.color=0xff555555 \
+        slider.height=12 \
+        drawing=off
+
+# Mic input popup rows (parented to the merged mic item).
 for i in $(seq 0 19); do
-  sketchybar --add item "mic_input_$i" popup.mic_input \
+  sketchybar --add item "mic_input_$i" popup.mic \
       --set "mic_input_$i" \
           drawing=off \
           script="$CONFIG_DIR/plugins/mic_input.sh" \
           icon="·" \
           icon.padding_left=6 \
-          icon.padding_right=4 \
+          icon.padding_right=6 \
           label.padding_right=6 \
           label.width=280 \
           width=300 \
           background.height=20
   sketchybar --subscribe "mic_input_$i" mouse.entered mouse.exited
 done
+
+sketchybar --subscribe mic mouse.clicked mouse.entered mouse.exited routine
+sketchybar --subscribe mic_slider mouse.clicked mouse.entered mouse.exited
 
 sketchybar --update
