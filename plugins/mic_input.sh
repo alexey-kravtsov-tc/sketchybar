@@ -20,6 +20,8 @@ POPUP_PREFIX="mic_input"
 HOVER_FLAG="/tmp/sketchybar_mic_hover"
 TIMER_PID="/tmp/sketchybar_mic_timer_pid"
 
+. "${CONFIG_DIR:-$HOME/.config/sketchybar}/plugins/_hover.sh"
+
 DEVICES_CACHE="/tmp/sketchybar_mic_inputs.txt"
 CURRENT_CACHE="/tmp/sketchybar_mic_current.txt"
 
@@ -204,6 +206,7 @@ if [ "$SENDER" = "mouse.entered" ]; then
     esac
     echo "1" > "$HOVER_FLAG"
     kill_timer
+    [ "$NAME" = "$ITEM" ] && apply_hover_on "$NAME"
     exit 0
 fi
 
@@ -216,6 +219,7 @@ if [ "$SENDER" = "mouse.exited" ]; then
             exit 0 ;;
     esac
     echo "0" > "$HOVER_FLAG"
+    [ "$NAME" = "$ITEM" ] && apply_hover_off "$NAME"
     start_timer
     exit 0
 fi

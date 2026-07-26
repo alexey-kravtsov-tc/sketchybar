@@ -55,11 +55,13 @@ refresh_events() {
     done
 }
 
+. "$CONFIG_DIR/plugins/_hover.sh" 2>/dev/null || . "${CONFIG_DIR:-$HOME/.config/sketchybar}/plugins/_hover.sh"
+
 if [ "$SENDER" = "mouse.entered" ]; then
-    sketchybar --set "$NAME" background.color=0xff484848
+    apply_hover_on "$NAME"
     exit 0
 elif [ "$SENDER" = "mouse.exited" ]; then
-    sketchybar --set "$NAME" background.color=0xff333333
+    apply_hover_off "$NAME"
     exit 0
 elif [ "$SENDER" = "mouse.clicked" ]; then
     sketchybar --set "$NAME" popup.drawing=toggle
