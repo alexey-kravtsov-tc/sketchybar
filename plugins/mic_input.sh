@@ -56,7 +56,7 @@ render_idle_label() {
     [ -z "$SHORT" ] && SHORT="Mic"
     MIC=$(get_mic_level)
     sketchybar --set "$ITEM" \
-        label="${MIC}% << ${SHORT}" \
+        label="${MIC}% / ${SHORT}" \
         label.drawing=on \
         popup.drawing=off
     sketchybar --set "$SLIDER" drawing=off
@@ -100,7 +100,7 @@ populate_popup() {
     while IFS= read -r line; do
         [ -z "$line" ] && continue
         if [ "$line" = "$CUR" ]; then
-            ICON=""
+            ICON="●"
             FONT="Hack Nerd Font:Bold:13.0"
         else
             ICON="·"
@@ -179,9 +179,28 @@ fi
 
 # --- Mouse events ------------------------------------------------------
 
+# Invert a popup row's colors (hover effect).
+hover_row_on() {
+    sketchybar --set "$1" \
+        background.drawing=on \
+        background.color=0xffeeeeee \
+        background.corner_radius=4 \
+        background.height=18 \
+        label.color=0xff222222 \
+        icon.color=0xff222222
+}
+
+# Restore a popup row's default colors.
+hover_row_off() {
+    sketchybar --set "$1" \
+        background.drawing=off \
+        label.color=0xffeeeeee \
+        icon.color=0xffffffff
+}
+
 if [ "$SENDER" = "mouse.entered" ]; then
     case "$NAME" in
-        ${POPUP_PREFIX}_[0-9]*) echo "1" > "$HOVER_FLAG"; kill_timer; exit 0 ;;
+        ${POPUP_PREFIX}_[0-9]*) echo "1" > "$HOVER_FLAG"; kill_timer; hover_row_on "$NAME"; exit 0 ;;
     esac
     echo "1" > "$HOVER_FLAG"
     kill_timer
@@ -192,6 +211,7 @@ if [ "$SENDER" = "mouse.exited" ]; then
     case "$NAME" in
         ${POPUP_PREFIX}_[0-9]*)
             echo "0" > "$HOVER_FLAG"
+            hover_row_off "$NAME"
             start_timer
             exit 0 ;;
     esac
