@@ -2,7 +2,6 @@
 
 # Temporary state file to avoid unnecessary updates
 STATE_FILE="/tmp/sketchybar-aerospace-state"
-FOCUSED_FILE="/tmp/sketchybar-aerospace-focused"
 
 # Resolve the focused workspace (may be passed in from events)
 if [ -n "$FOCUSED_WORKSPACE" ]; then
@@ -11,23 +10,8 @@ else
   FOCUSED_WS=$(aerospace list-workspaces --focused 2>/dev/null)
 fi
 
-# --- Mouse event handling for per‑workspace items ---------------------------------
+# --- Mouse click handling for per‑workspace items -------------------------------
 if [ "$NAME" != "aerospace_handler" ]; then
-  if [ "$SENDER" = "mouse.entered" ]; then
-    sketchybar --set "$NAME" background.color=0xff5a5a5a
-    exit 0
-  fi
-  if [ "$SENDER" = "mouse.exited" ]; then
-    # Determine correct background based on focus state
-    read -r CUR_FOCUSED < "$FOCUSED_FILE" 2>/dev/null
-    WS_ID="${NAME#ws}"
-    if [ "$WS_ID" = "$CUR_FOCUSED" ]; then
-      sketchybar --set "$NAME" background.color=0xff5a5a5a
-    else
-      sketchybar --set "$NAME" background.color=0xff333333
-    fi
-    exit 0
-  fi
   if [ "$SENDER" = "mouse.clicked" ]; then
     WS_ID="${NAME#ws}"
     aerospace workspace "$WS_ID" 2>/dev/null
@@ -45,9 +29,8 @@ if [ -f "$STATE_FILE" ]; then
   fi
 fi
 
-# Persist the new focused workspace in both state trackers
+# Persist the new focused workspace
 printf "%s" "$FOCUSED_WS" > "$STATE_FILE"
-printf "%s" "$FOCUSED_WS" > "$FOCUSED_FILE"
 
 # Retrieve all workspaces and iterate over them
 ALL_WS=$(aerospace list-workspaces --all 2>/dev/null)
@@ -94,7 +77,7 @@ for ws in $ALL_WS; do
                label="${ws}: $APP_STR" \
                background.color="$BG_COLOR" \
                script="$CONFIG_DIR/plugins/aerospace.sh"
-    sketchybar --subscribe "ws${ws}" mouse.entered mouse.exited mouse.clicked
+    sketchybar --subscribe "ws${ws}" mouse.clicked
   fi
 
 done

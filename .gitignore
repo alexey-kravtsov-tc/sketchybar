@@ -9,6 +9,12 @@
 *.log
 socket-*
 
+# SwiftPM build artifacts (helper was removed, but keep this guard so any
+# future swift work doesn't stage build output)
+.build/
+*.xcodeproj/xcuserdata/
+.swiftpm/
+
 # Node / npm
 node_modules/
 npm-debug.log

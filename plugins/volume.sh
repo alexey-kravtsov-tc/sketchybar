@@ -1,24 +1,32 @@
 #!/bin/sh
 
-# Merged volume + audio output control.
+# Merged volume + audio output control (click-only, synchronous).
 #
-# State 1 (default): bar shows text "  {output} >> {volume}%"  (popup hidden,
+# State 1 (default): bar shows text "{output} >> {volume}%" (popup hidden,
 #                   slider hidden).
-# State 2 (after click on text item): text item's label is blanked, the
-#                   volume_slider next to it becomes visible, and the popup
-#                   lists available output devices with the current one
-#                   marked (● + bold). Collapses back to State 1 after
-#                   HOLD_SECONDS of the pointer leaving the whole control.
+# State 2 (after click on text item): the slider appears NEXT TO the text
+#                   label (label stays visible) and the popup lists available
+#                   output devices with the current one marked (● + bold).
+# State 2 stays open until:
+#   - the text item is clicked again (toggle back to State 1), OR
+#   - a device row is clicked (switch device, then collapse to State 1).
+# Dragging the slider updates the system volume and keeps State 2 open.
+# No timers, no hover, no auto-dismiss.
+#
+# Delivery model (matches sketchybar-popup(5) pattern):
+#   - The `volume` anchor uses `click_script=$CONFIG_DIR/plugins/volume.sh toggle`.
+#     Subscribing the anchor to `mouse.clicked` does NOT reliably deliver
+#     clicks once popup rows are attached (sketchybar swallows them), so we
+#     use the recommended click_script inline invocation.
+#   - The `volume_slider` does subscribe `mouse.clicked volume_change`
+#     (sliders explicitly support mouse.clicked per sketchybar-components(5)).
+#   - Each popup row gets an inline `click_script=` set by `populate_popup`.
 
 EXPANDED_WIDTH=200
-HOLD_SECONDS=5
 
 ITEM="volume"
 SLIDER="volume_slider"
 POPUP_PREFIX="volume_output"
-
-HOVER_FLAG="/tmp/sketchybar_volume_hover"
-TIMER_TAG="SKETCHYBAR_VOLUME_TIMER"
 
 DEVICES_CACHE="/tmp/sketchybar_volume_devices.txt"
 CURRENT_CACHE="/tmp/sketchybar_volume_current.txt"
@@ -30,10 +38,8 @@ short_name() {
 
 # --- Audio source helpers ------------------------------------------------
 
-# Single-instance tag for the background fetch (avoids overlapping
-# SwitchAudioSource processes on rapid routine ticks).
-FETCH_TAG="SKETCHYBAR_VOLUME_FETCH"
-
+# Synchronous fetch of the output-device list + current device. Writes
+# $DEVICES_CACHE and $CURRENT_CACHE atomically (write-to-tmp then mv).
 fetch_devices() {
     SwitchAudioSource -a -t output 2>/dev/null > "$DEVICES_CACHE.tmp"
     mv "$DEVICES_CACHE.tmp" "$DEVICES_CACHE"
@@ -41,36 +47,42 @@ fetch_devices() {
     mv "$CURRENT_CACHE.tmp" "$CURRENT_CACHE"
 }
 
-refresh_in_background() {
-    # Skip if a fetch is already running; pkill -f on the marker reaps any
-    # prior instance before starting a new one (defensive across restarts).
-    pkill -f "$FETCH_TAG" 2>/dev/null
-    (
-        exec -a "$FETCH_TAG" sh -c '
-            "'"$CONFIG_DIR"'"/plugins/volume.sh __fetch
-        '
-    ) 2>/dev/null &
-    disown 2>/dev/null
-}
-
-# Hidden entry-point invoked by the background fetch.
-if [ "$1" = "__fetch" ]; then
-    fetch_devices
-    exit 0
-fi
-
 current_output() {
     [ -f "$CURRENT_CACHE" ] && cat "$CURRENT_CACHE" && return
     SwitchAudioSource -c 2>/dev/null
 }
 
+# Returns the value (on/off) of a sketchybar item's top-level `drawing`
+# property. Filter -F'"' splits '"drawing": "on",' into ['...','drawing',
+# ': ','on',', '] — $4 is the bare value. Robust against nested
+# background/icon/popup drawing props (we take the first match which is
+# always the item's geometry.drawing).
+is_drawn() {
+    sketchybar --query "$1" 2>/dev/null \
+        | awk -F'"' '/"drawing":/ {print $4; exit}'
+}
+
 # --- Bar helpers ---------------------------------------------------------
 
+# Guard against `osascript -e 'output volume of (get volume settings)'` returning
+# the literal string "missing value" for some devices (e.g. external USB audio
+# that doesn't expose a software level). Also ignore $INFO when it isn't a
+# bare integer: sketchybar populates $INFO with a click-descriptor JSON for
+# `mouse.clicked` events (`{"button":"left",...}`), which we must NOT treat
+# as the volume number and render into the label.
 get_volume() {
-    if [ -n "$INFO" ]; then
-        echo "$INFO"
+    RAW=""
+    case "$INFO" in
+        ''|*[!0-9]*) ;;
+        *) RAW="$INFO" ;;
+    esac
+    if [ -z "$RAW" ]; then
+        RAW=$(osascript -e 'output volume of (get volume settings)' 2>/dev/null)
+    fi
+    if [ -z "$RAW" ] || [ "$RAW" = "missing value" ]; then
+        echo "?"
     else
-        osascript -e 'output volume of (get volume settings)' 2>/dev/null
+        echo "$RAW"
     fi
 }
 
@@ -81,27 +93,24 @@ render_idle_label() {
     [ -z "$SHORT" ] && SHORT="Audio"
     VOL=$(get_volume)
     sketchybar --set "$ITEM" \
-        label="${SHORT} / ${VOL}%" \
+        label="${SHORT} >> ${VOL}%" \
         label.drawing=on \
         popup.drawing=off
     sketchybar --set "$SLIDER" drawing=off
 }
 
-# Show State 2: text item still drawn (as popup anchor) but its label
-# blanked/padded to nothing, slider visible, popup populated and shown.
+# Show State 2: slide out next to the still-visible label, show the popup.
+# The label is kept on (label.drawing=on) so the user sees the original
+# compact text right next to the slider, per the "don't hide the original
+# item" requirement.
 expand() {
-    echo "1" > "$HOVER_FLAG"
-    kill_timer
-
-    sketchybar --set "$ITEM" label="" label.drawing=off popup.drawing=on
+    sketchybar --set "$ITEM" label.drawing=on popup.drawing=on
     sketchybar --set "$SLIDER" drawing=on slider.width="$EXPANDED_WIDTH"
-
     populate_popup
 }
 
 # Restore State 1.
 collapse() {
-    echo "0" > "$HOVER_FLAG"
     sketchybar --set "$SLIDER" drawing=off
     sketchybar --set "$ITEM" popup.drawing=off
     render_idle_label
@@ -142,52 +151,29 @@ populate_popup() {
     done < "$DEVICES_CACHE"
 }
 
-# --- Timer helpers -------------------------------------------------------
-#
-# Single-instance collapse timer using pkill -f so concurrent mouse.exited
-# events (from bar item, slider, or popup rows) cannot pile up children.
-# The background subshell is started under a unique marker name, so the
-# next start_timer always reaps the previous one regardless of races on
-# the pid file. The marker also lets us clean up stale timers left
-# orphaned by a previous sketchybar run.
-
-kill_timer() {
-    pkill -f "$TIMER_TAG" 2>/dev/null
-}
-
-start_timer() {
-    kill_timer
-    # exec -a runs sh under the marker name so pkill -f finds/identifies it.
-    (
-        exec -a "$TIMER_TAG" sh -c '
-            sleep '"$HOLD_SECONDS"'
-            if [ "$(cat '"$HOVER_FLAG"' 2>/dev/null)" = "1" ]; then exit 0; fi
-            '"$CONFIG_DIR"'/plugins/volume.sh __collapse
-        '
-    ) 2>/dev/null &
-    disown 2>/dev/null
-}
-
-# Background-only entry point invoked by the collapse timer.
-if [ "$1" = "__collapse" ]; then
-    collapse
-    exit 0
-fi
-
 # --- Entry points --------------------------------------------------------
 
-# Called from a popup row's click_script after the user picks a device.
+# Called from a popup-row click_script after the user picks a device.
+# Per the user spec: collapse back to the compact (idle) view on selection.
 if [ "$1" = "switch" ]; then
     # Give CoreAudio a moment to register the newly-selected device.
     sleep 0.3
     fetch_devices
-    # Refresh current cached and re-render the idle label, but if the popup
-    # is currently open (state 2), repopulate so the new current lights up.
-    POPUP_ON=$(sketchybar --query "$ITEM" 2>/dev/null | grep -o '"popup" : {[^}]*}' | grep -o '"drawing" : [01]' | grep -o '[01]')
-    if [ "$POPUP_ON" = "1" ]; then
-        populate_popup
+    collapse
+    exit 0
+fi
+
+# Called from the `volume` text-item's inline `click_script=` to toggle
+# between State 1 (idle) and State 2 (slider + device popup).
+if [ "$1" = "toggle" ]; then
+    SLIDER_DRAWN=$(is_drawn "$SLIDER")
+    if [ "$SLIDER_DRAWN" = "on" ]; then
+        collapse
     else
-        render_idle_label
+        # First ever click: lazily fetch the device list so the popup
+        # populates immediately even before routine refresh has run.
+        [ ! -f "$DEVICES_CACHE" ] && fetch_devices
+        expand
     fi
     exit 0
 fi
@@ -195,78 +181,48 @@ fi
 # Volume change event or init/routine.
 if [ "$SENDER" = "volume_change" ] || [ -z "$SENDER" ] \
    || [ "$SENDER" = "forced" ] || [ "$SENDER" = "routine" ]; then
-    [ ! -f "$DEVICES_CACHE" ] && refresh_in_background
-    render_idle_label
+    [ ! -f "$DEVICES_CACHE" ] && fetch_devices
+    # Cheap re-sync of current device so the cache matches reality if the
+    # system default output was changed outside sketchybar.
+    LIVE_CUR=$(SwitchAudioSource -c 2>/dev/null)
+    if [ -n "$LIVE_CUR" ]; then
+        echo "$LIVE_CUR" > "$CURRENT_CACHE"
+    fi
+    SLIDER_DRAWN=$(is_drawn "$SLIDER")
     VOL=$(get_volume)
-    sketchybar --set "$SLIDER" slider.percentage="$VOL"
-    exit 0
-fi
-
-# --- Mouse events --------------------------------------------------------
-
-# Invert a popup row's colors (hover effect).
-hover_row_on() {
-    sketchybar --set "$1" \
-        background.drawing=on \
-        background.color=0xffeeeeee \
-        background.corner_radius=4 \
-        background.height=18 \
-        label.color=0xff222222 \
-        icon.color=0xff222222
-}
-
-# Restore a popup row's default colors.
-hover_row_off() {
-    sketchybar --set "$1" \
-        background.drawing=off \
-        label.color=0xffeeeeee \
-        icon.color=0xffffffff
-}
-
-if [ "$SENDER" = "mouse.entered" ]; then
-    # Hovering any part of the control = stay open (cancel collapse timer).
-    case "$NAME" in
-        ${POPUP_PREFIX}_[0-9]*) echo "1" > "$HOVER_FLAG"; kill_timer; hover_row_on "$NAME"; exit 0 ;;
+    # Only push a number to the slider (sketchybar rejects non-numeric input
+    # like "?" or "missing value", which would crash the slider display).
+    case "$VOL" in
+        ''|*[!0-9]*) ;;
+        *) sketchybar --set "$SLIDER" slider.percentage="$VOL" ;;
     esac
-    echo "1" > "$HOVER_FLAG"
-    kill_timer
-    [ "$NAME" = "$ITEM" ] && sketchybar --set "$ITEM" background.color=0xffeeeeee label.color=0xff222222 icon.color=0xff222222
+    if [ "$SLIDER_DRAWN" != "on" ]; then
+        render_idle_label
+    fi
     exit 0
 fi
 
-if [ "$SENDER" = "mouse.exited" ]; then
-    case "$NAME" in
-        ${POPUP_PREFIX}_[0-9]*)
-            echo "0" > "$HOVER_FLAG"
-            hover_row_off "$NAME"
-            start_timer
-            exit 0 ;;
-    esac
-    echo "0" > "$HOVER_FLAG"
-    [ "$NAME" = "$ITEM" ] && sketchybar --set "$ITEM" background.color=0xff333333 label.color=0xffeeeeee icon.color=0xffffffff
-    start_timer
-    exit 0
-fi
+# --- Mouse events (click only — no hover handlers) ----------------------
 
 if [ "$SENDER" = "mouse.clicked" ]; then
-    # Slider drag -> set system volume, keep expanded.
+    # Slider drag-release -> set system volume, keep State 2 expanded.
+    # (Only the slider reaches this branch; the anchor uses click_script
+    # which runs the `toggle` arg path above, NOT this subscription.)
     if [ "$NAME" = "$SLIDER" ] && [ -n "$PERCENTAGE" ]; then
         osascript -e "set volume output volume $PERCENTAGE"
         sketchybar --set "$SLIDER" slider.percentage="$PERCENTAGE"
-        start_timer
+        # Refresh the idle label in-place so the {output} >> {vol}% text
+        # updates the moment the slider is released (it's still visible
+        # next to the slider in State 2).
+        OUT=$(current_output)
+        SHORT=$(short_name "$OUT")
+        [ -z "$SHORT" ] && SHORT="Audio"
+        sketchybar --set "$ITEM" label="${SHORT} >> ${PERCENTAGE}%"
         exit 0
     fi
-
-    # Clicking the text item toggles to State 2.
-    if [ "$NAME" = "$ITEM" ]; then
-        # If already expanded, treat click as a toggle back to State 1.
-        SLIDER_DRAWN=$(sketchybar --query "$SLIDER" 2>/dev/null | grep -m1 -o '"drawing" : [a-z]*' | grep -o 'on\|off')
-        if [ "$SLIDER_DRAWN" = "on" ]; then
-            collapse
-        else
-            expand
-            start_timer
-        fi
-        exit 0
-    fi
+    # We only reach here for an unexpected `mouse.clicked` on a non-slider
+    # item: re-render the idle label so we never leave a stale or junk
+    # (eg. click-descriptor JSON) label visible to the user.
+    render_idle_label
+    exit 0
 fi

@@ -1,38 +1,16 @@
 #!/bin/sh
 
-# SketchyBar media plugin (main item + popup panel).
+# SketchyBar media plugin (main item + popup panel, click-only).
 #
 # Behaviour:
 #   - The bar item shows the now-playing track (icon = play/pause).
 #   - Clicking the bar item toggles the popup panel (no more inline play/pause).
 #   - The popup contains three rows: previous / play-pause / next.
 #   - Popup rows are populated and updated via this same script.
+# No hover handlers, no auto-dismiss timers. Click to open, click to close.
 
 CONFIG_DIR="${CONFIG_DIR:-$HOME/.config/sketchybar}"
 POPUP_ROWS="media_popup_0 media_popup_1 media_popup_2"
-HOVER_FLAG="/tmp/sketchybar_media_hover"
-
-# Single-instance popup-close timer (avoids stacking sleep subshells on
-# repeated hover/unhover). Mirrors plugins/volume.sh.
-TIMER_TAG="SKETCHYBAR_MEDIA_TIMER"
-
-# ---------------------------------------------------------------------------
-# Timer helpers (single-instance popup-close via pkill -f marker)
-# ---------------------------------------------------------------------------
-
-kill_timer() { pkill -f "$TIMER_TAG" 2>/dev/null; }
-
-start_timer() {
-  kill_timer
-  (
-    exec -a "$TIMER_TAG" sh -c '
-      sleep 1
-      if [ "$(cat '"$HOVER_FLAG"' 2>/dev/null)" = "1" ]; then exit 0; fi
-      sketchybar --set media popup.drawing=off 2>/dev/null
-    '
-  ) 2>/dev/null &
-  disown 2>/dev/null
-}
 
 # ---------------------------------------------------------------------------
 # Playback helpers
@@ -83,52 +61,10 @@ populate_popup() {
 # Event dispatch
 # ---------------------------------------------------------------------------
 
-# Invert a popup row's colors (hover effect).
-hover_row_on() {
-  sketchybar --set "$1" \
-    background.color=0xffeeeeee \
-    label.color=0xff222222 \
-    icon.color=0xff222222 2>/dev/null
-}
-
-# Restore a popup row's default (dark pill) colors.
-hover_row_off() {
-  sketchybar --set "$1" \
-    background.color=0xff222222 \
-    label.color=0xffeeeeee \
-    icon.color=0xffffffff 2>/dev/null
-}
-
 case "$SENDER" in
   popup)
     # Force-refresh popup content (used by click scripts).
     populate_popup
-    exit 0
-    ;;
-
-  mouse.entered)
-    case "$NAME" in
-      media_popup_[0-9]) echo "1" > "$HOVER_FLAG"; kill_timer; hover_row_on "$NAME"; exit 0 ;;
-    esac
-    if [ "$NAME" = "media" ]; then
-      echo "1" > "$HOVER_FLAG"
-      kill_timer
-      sketchybar --set media background.color=0xffeeeeee label.color=0xff222222 icon.color=0xff222222
-      populate_popup
-      sketchybar --set media popup.drawing=on 2>/dev/null
-    fi
-    exit 0
-    ;;
-
-  mouse.exited)
-    case "$NAME" in
-      media_popup_[0-9]) echo "0" > "$HOVER_FLAG"; hover_row_off "$NAME"; start_timer; exit 0 ;;
-    esac
-    if [ "$NAME" = "media" ]; then
-      echo "0" > "$HOVER_FLAG"
-      sketchybar --set media background.color=0xff333333 label.color=0xffeeeeee icon.color=0xffffffff
-      start_timer
-    fi
     exit 0
     ;;
 
