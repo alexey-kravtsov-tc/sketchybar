@@ -87,6 +87,10 @@ get_volume() {
 }
 
 # Render the State 1 text label using the current cached output + volume.
+# Note: this does NOT set `popup.drawing=off` — that's `collapse()`'s job.
+# Routine refresh only calls here when the slider is NOT drawn (i.e. State
+# 1), where the popup is already hidden, so the redundant `popup.drawing=off`
+# would just be a wasted IPC (and a duplicate during `collapse()`).
 render_idle_label() {
     OUT=$(current_output)
     SHORT=$(short_name "$OUT")
@@ -94,33 +98,46 @@ render_idle_label() {
     VOL=$(get_volume)
     sketchybar --set "$ITEM" \
         label="${SHORT} >> ${VOL}%" \
-        label.drawing=on \
-        popup.drawing=off
+        label.drawing=on
     sketchybar --set "$SLIDER" drawing=off
 }
 
-# Show State 2: slide out next to the still-visible label, show the popup.
-# The label is kept on (label.drawing=on) so the user sees the original
-# compact text right next to the slider, per the "don't hide the original
-# item" requirement.
+# Show State 2: the slider appears next to the still-visible label, and the
+# pre-populated popup appears in a single visible redraw (no progressive
+# row-by-row fill). Order matters for redraw efficiency, per
+# sketchybar-tips(5) ("After each configuration command, the bar is
+# redrawn if needed"):
+#   1. populate_popup() — set row content WHILE popup.drawing=off so the
+#      ~3 per-row `sketchybar --set` calls happen off-screen (invisible).
+#   2. Turn the slider ON first — bar layout shifts to accommodate it,
+#      and that layout settles before the popup is shown.
+#   3. Turn the popup ON — it appears already fully populated on the now
+#      stable bar layout, in a single visible redraw.
 expand() {
-    sketchybar --set "$ITEM" label.drawing=on popup.drawing=on
+    populate_popup                                   # off-screen populate + rows cleared inside
     sketchybar --set "$SLIDER" drawing=on slider.width="$EXPANDED_WIDTH"
-    populate_popup
+    sketchybar --set "$ITEM"   label.drawing=on popup.drawing=on
 }
 
-# Restore State 1.
+# Restore State 1. Each `--set` is a single IPC, no duplicates:
+#   1. batch-clear all 20 popup rows in one regex call (1 IPC)
+#   2. hide the popup (1 IPC)
+#   3. render_idle_label — sets the idle text + hides the slider (2 IPCs)
+# Note: render_idle_label hides the slider, so we don't repeat it here.
 collapse() {
-    sketchybar --set "$SLIDER" drawing=off
-    sketchybar --set "$ITEM" popup.drawing=off
+    sketchybar --set "/${POPUP_PREFIX}_[0-9]/" drawing=off 2>/dev/null
+    sketchybar --set "$ITEM"                  popup.drawing=off
     render_idle_label
 }
 
 # Fill popup rows from cached devices, marking the current one with ● + bold.
+# All 20 rows are first cleared with one batched regex `--set` (instead of
+# 20 separate IPC calls — see sketchybar-tips(5) on batching); the per-row
+# `drawing=on` calls below are unavoidable (different labels per row) but
+# they happen WHILE the popup is hidden (caller populates before turning
+# the popup on) so their redraws are invisible.
 populate_popup() {
-    for i in $(seq 0 19); do
-        sketchybar --set "${POPUP_PREFIX}_$i" drawing=off 2>/dev/null
-    done
+    sketchybar --set "/${POPUP_PREFIX}_[0-9]/" drawing=off 2>/dev/null
 
     if [ ! -f "$DEVICES_CACHE" ]; then
         sketchybar --set "${POPUP_PREFIX}_0" drawing=on \
