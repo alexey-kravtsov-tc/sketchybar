@@ -89,6 +89,13 @@ To change the time window (e.g., only next 7 days), replace `--days 30` with `--
 
 ---
 
+### ⌘ App Launcher (click-only)
+- The `⌘` item at the far left of the bar opens a popup listing up to **40 apps** from `/Applications` and `~/Applications`, sorted alphabetically (case-insensitive, deduped by bundle name).
+- **Click a row → launches the app** (`open -a '<path>'`) and closes the popup.
+- **No timers, no routine refresh** — the app list is read from disk only when the popup is opened, so there is no background cost.
+
+---
+
 ### 🚀 AeroSpace Workspace Handler (Invisible)
 - Listens to `aerospace_workspace_change` events.
 - Calls `$CONFIG_DIR/plugins/aerospace.sh` on workspace changes (useful for per‑workspace sketchybar rules).
@@ -141,6 +148,7 @@ brew install nowplaying-cli
 │   ├── media_prev.sh      # Previous track button (no timers)
 │   ├── media_next.sh      # Next track button (no timers)
 │   ├── aerospace.sh       # AeroSpace workspace handler (no timers)
+│   ├── launcher.sh        # App launcher popup: ⌘ → list of installed apps (click-only)
 │   ├── space.sh           # AeroSpace space item
 │   └── gradle/            # Gradle daemon monitor (has its own worker reap + 7200s cap)
 └── README.md

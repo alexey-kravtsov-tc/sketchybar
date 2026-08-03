@@ -28,6 +28,41 @@ sketchybar --default background.color=0xff333333 \
 
 # --- LEFT SIDE ITEMS ---
 
+# App launcher (click-only, no timers): static ⌘ label; click toggles a popup
+# that lists up to 40 apps from /Applications and ~/Applications. Row click
+# runs `open -a '<path>'` and closes the popup. Uses click_script (not
+# --subscribe mouse.clicked) so clicks still fire once popup rows are
+# attached — see sketchybar-popup(5).
+sketchybar --add item launcher left \
+    --set launcher \
+        icon.drawing=off \
+        label="⌘" \
+        label.font="Hack Nerd Font:Bold:12.0" \
+        label.color=0xffeeeeee \
+        label.padding_left=6 \
+        label.padding_right=6 \
+        padding_left=4 \
+        padding_right=4 \
+        click_script="$CONFIG_DIR/plugins/launcher.sh toggle" \
+        popup.align=left \
+        popup.blur_radius=8 \
+        popup.background.color=0xff222222
+
+for i in $(seq 0 39); do
+  sketchybar --add item "launcher_app_$i" popup.launcher \
+      --set "launcher_app_$i" \
+          drawing=off \
+          icon.drawing=off \
+          icon.padding_left=6 \
+          icon.padding_right=4 \
+          label.font="Hack Nerd Font:Bold:14.0" \
+          label.padding_left=4 \
+          label.padding_right=6 \
+          label.width=320 \
+          width=340 \
+          background.height=24
+done
+
 # AeroSpace workspace handler (invisible)
 sketchybar --add event aerospace_workspace_change
 sketchybar --add item aerospace_handler left \
